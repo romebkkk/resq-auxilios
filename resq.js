@@ -15,7 +15,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '1.0.0';
+  var VERSION = '2.0.0';
 
   /**
    * Cálculo del ritmo óptimo de RCP (100 - 120 compresiones/minuto)
@@ -32,6 +32,87 @@
       esRitmoRecomendado: esRitmoRecomendado,
       profundidadRecomendada: '5 a 6 cm en adultos',
       cancionReferencia: 'Stayin\' Alive (Bee Gees) o La Macarena'
+    };
+  }
+
+  /**
+   * Feedback en tiempo real del ritmo de compresiones (ERC 2021/2025)
+   * Evalúa la cadencia de pulsaciones del reanimador
+   */
+  function evaluarCalidadCompresion(intervalosMsArray) {
+    if (!intervalosMsArray || intervalosMsArray.length < 2) {
+      return { estado: 'insuficiente', mensaje: 'Sigue comprimiendo para calibrar el ritmo', bpmMedio: 0 };
+    }
+    // Promedio de los últimos intervalos
+    var ultimos = intervalosMsArray.slice(-5);
+    var suma = 0;
+    for (var i = 0; i < ultimos.length; i++) {
+      suma += ultimos[i];
+    }
+    var mediaMs = suma / ultimos.length;
+    var bpm = Math.round(60000 / mediaMs);
+
+    var estado = 'optimo';
+    var mensaje = '✅ Ritmo óptimo (100-120 cpm). Mantén la profundidad y permite la descompresión total del pecho.';
+
+    if (bpm < 100) {
+      estado = 'lento';
+      mensaje = '⚠️ Demasiado lento (' + bpm + ' cpm). Acelera al ritmo de Stayin\' Alive (100-120 cpm).';
+    } else if (bpm > 120) {
+      estado = 'rapido';
+      mensaje = '⚠️ Demasiado rápido (' + bpm + ' cpm). Ralentiza un poco; si vas muy rápido el corazón no se llena de sangre entre compresiones.';
+    }
+
+    return {
+      bpmMedio: bpm,
+      estado: estado,
+      mensaje: mensaje,
+      recordatorioExpansion: 'Recuerda: permite que el esternón retroceda completamente sin separar las manos.'
+    };
+  }
+
+  /**
+   * Protocolo diferencial de Soporte Vital Básico: Adulto vs Pediátrico (Lactante / Niño)
+   * Basado en Guías ERC 2021 / 2025 y AHA PALS
+   */
+  function obtenerProtocoloRCP(tipoPaciente) {
+    tipoPaciente = tipoPaciente || 'adulto'; // 'adulto', 'nino', 'lactante'
+
+    if (tipoPaciente === 'lactante') {
+      return {
+        tipo: 'Lactante (<1 año)',
+        relacionCompresionesVentilaciones: '15:2 (reanimador sanitario/entrenado) o 30:2 (lego)',
+        ventilacionesIniciales: 5,
+        ventilacionInicialExplicacion: 'En parada pediátrica la causa suele ser hipóxica/asfíctica: 5 insuflaciones de rescate ANTES de las compresiones torácicas.',
+        profundidad: 'Aproximadamente 4 cm (1/3 del diámetro anteroposterior del tórax)',
+        tecnicaCompresion: '2 dedos en el centro del pecho (esternón inferior) o técnica de 2 pulgares abrazando el tórax',
+        frecuencia: '100 - 120 compresiones/minuto',
+        dea: 'Usar DEA con atenuador de dosis pediátrica si está disponible.'
+      };
+    }
+
+    if (tipoPaciente === 'nino') {
+      return {
+        tipo: 'Niño (1 año a pubertad)',
+        relacionCompresionesVentilaciones: '15:2 o 30:2',
+        ventilacionesIniciales: 5,
+        ventilacionInicialExplicacion: '5 insuflaciones de rescate iniciales (boca a boca sellando nariz).',
+        profundidad: 'Aproximadamente 5 cm (1/3 del diámetro del tórax)',
+        tecnicaCompresion: 'Con el talón de 1 mano (o 2 manos en niños grandes) sobre la mitad inferior del esternón',
+        frecuencia: '100 - 120 compresiones/minuto',
+        dea: 'Usar parches pediátricos (<8 años o <25 kg). Si no hay, usar parches de adulto asegurando que no se toquen entre sí.'
+      };
+    }
+
+    return {
+      tipo: 'Adulto',
+      relacionCompresionesVentilaciones: '30:2 (o RCP solo con las manos continua a 100-120 cpm si no entrenado)',
+      ventilacionesIniciales: 0,
+      ventilacionInicialExplicacion: 'En adultos la parada suele ser cardíaca súbita (FV/TV): empezar inmediatamente con compresiones torácicas.',
+      profundidad: '5 a 6 cm',
+      tecnicaCompresion: '2 manos entrelazadas en el centro del tórax con brazos rectos perpendiculares',
+      frecuencia: '100 - 120 compresiones/minuto',
+      dea: 'Colocar parches del DEA inmediatamente tan pronto como llegue y seguir instrucciones de voz.'
     };
   }
 
@@ -119,6 +200,8 @@
   return {
     VERSION: VERSION,
     calcularIntervaloRCP: calcularIntervaloRCP,
+    evaluarCalidadCompresion: evaluarCalidadCompresion,
+    obtenerProtocoloRCP: obtenerProtocoloRCP,
     evaluarAtragantamiento: evaluarAtragantamiento,
     pautasQuemadura: pautasQuemadura
   };

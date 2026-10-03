@@ -27,7 +27,58 @@ test('Ritmo de 110 bpm está en el rango recomendado de 100-120 bpm', function (
   assert.strictEqual(r.intervaloMs, 545);
 });
 
-console.log('\n=== 2. Protocolo de Atragantamiento y Asfixia ===');
+console.log('\n=== 2. Feedback de Calidad de Compresiones Torácicas ===');
+
+test('Cadencia de 545 ms (~110 bpm) detecta ritmo óptimo', function () {
+  var intervalos = [545, 540, 550, 542, 545];
+  var r = Resq.evaluarCalidadCompresion(intervalos);
+  assert.strictEqual(r.estado, 'optimo');
+  assert.strictEqual(r.bpmMedio, 110);
+  assert.ok(/Ritmo óptimo/i.test(r.mensaje));
+});
+
+test('Cadencia lenta de 750 ms (80 bpm) alerta para acelerar', function () {
+  var intervalos = [750, 740, 760, 755, 750];
+  var r = Resq.evaluarCalidadCompresion(intervalos);
+  assert.strictEqual(r.estado, 'lento');
+  assert.strictEqual(r.bpmMedio, 80);
+  assert.ok(/Demasiado lento/i.test(r.mensaje));
+});
+
+test('Cadencia acelerada de 400 ms (150 bpm) alerta para frenar y permitir retorno venoso', function () {
+  var intervalos = [400, 395, 405, 400, 400];
+  var r = Resq.evaluarCalidadCompresion(intervalos);
+  assert.strictEqual(r.estado, 'rapido');
+  assert.strictEqual(r.bpmMedio, 150);
+  assert.ok(/Demasiado rápido/i.test(r.mensaje));
+});
+
+console.log('\n=== 3. Protocolos Diferenciales: Lactante vs Niño vs Adulto ===');
+
+test('Lactante (<1 año) exige 5 insuflaciones de rescate antes de comprimir y técnica de 2 dedos a 4 cm', function () {
+  var r = Resq.obtenerProtocoloRCP('lactante');
+  assert.strictEqual(r.ventilacionesIniciales, 5);
+  assert.ok(/4 cm/i.test(r.profundidad));
+  assert.ok(/2 dedos|2 pulgares/i.test(r.tecnicaCompresion));
+  assert.ok(/hipóxica/i.test(r.ventilacionInicialExplicacion));
+});
+
+test('Niño exige 5 insuflaciones iniciales y compresión con 1 talón de mano a 5 cm', function () {
+  var r = Resq.obtenerProtocoloRCP('nino');
+  assert.strictEqual(r.ventilacionesIniciales, 5);
+  assert.ok(/5 cm/i.test(r.profundidad));
+  assert.ok(/1 mano/i.test(r.tecnicaCompresion));
+});
+
+test('Adulto comienza directamente con 30 compresiones a 5-6 cm de profundidad', function () {
+  var r = Resq.obtenerProtocoloRCP('adulto');
+  assert.strictEqual(r.ventilacionesIniciales, 0);
+  assert.ok(/5 a 6 cm/i.test(r.profundidad));
+  assert.ok(/2 manos entrelazadas/i.test(r.tecnicaCompresion));
+  assert.ok(/30:2/i.test(r.relacionCompresionesVentilaciones));
+});
+
+console.log('\n=== 4. Protocolo de Atragantamiento y Asfixia ===');
 
 test('Persona tosiendo con fuerza debe animarse a toser sin golpes', function () {
   var r = Resq.evaluarAtragantamiento({ tosiendoEficaz: true, consciente: true });
@@ -50,7 +101,7 @@ test('Víctima inconsciente por atragantamiento activa RCP inmediata', function 
   assert.ok(/INICIAR RCP/i.test(r.accionPrincipal));
 });
 
-console.log('\n=== 3. Primeros Auxilios en Quemaduras ===');
+console.log('\n=== 5. Primeros Auxilios en Quemaduras ===');
 
 test('Quemaduras prescriben 20 minutos de agua fresca y prohíben hielo directo', function () {
   var r = Resq.pautasQuemadura('mano');

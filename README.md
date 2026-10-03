@@ -15,10 +15,14 @@ In out-of-hospital cardiac arrest, **survival decreases by 10% for every minute 
 
 ---
 
-## ⚡ Key Modules
-1. **⚡ CPR Metronome (110 BPM):** High-visibility visual flash + crisp audio beeps via Web Audio API, with automated 30-compression cycle announcements.
-2. **🥖 Choking / Heimlich Protocol:** Distinguishes effective coughing, adult Heimlich maneuvers (5 back blows + 5 abdominal thrusts), and infant protocols (<1 year: back blows + chest thrusts, NO Heimlich).
-3. **🔥 Burn Care:** The 20-minute cool water golden rule, prohibiting dangerous home remedies (no ice, no toothpaste).
+## ⚡ Key Modules (v2.0 Clinical Grade - ERC 2021/2025 & AHA)
+1. **⚡ CPR Metronome (110 BPM) & Tap Quality Feedback:** High-visibility visual flash + crisp audio beeps via Web Audio API, with real-time compression cadence analysis (detects <100 bpm too slow, >120 bpm too fast, full chest recoil reminder).
+2. **👶 Pediatric vs Adult Life Support:**
+   - **Adults:** Immediate 30:2 compressions (or continuous hands-only CPR) at 5–6 cm depth.
+   - **Infants (<1 yr) & Children (1 yr-puberty):** 5 initial rescue breaths (hypoxic arrest origin) followed by 15:2 ratio (or 30:2 lay rescuer), 4 cm (infants with 2 fingers/encircling) and 5 cm (children with 1 hand).
+3. **🥖 Choking / Heimlich Decision Tree:** Distinguishes effective coughing, adult Heimlich maneuvers (5 back blows + 5 abdominal thrusts), and infant choking (<1 year: back blows + chest thrusts, NO Heimlich abdominal compression).
+4. **🔥 Burn Care Protocol:** 20-minute cool running water golden rule, clean cling film protection, and strict prohibition of dangerous home remedies.
+5. **🫀 AED / DEA Integration Guidance:** Immediate voice prompt adherence and pad placement instructions.
 
 ---
 
