@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resq-Auxilios — Soporte Vital, Metrónomo de RCP y Guía de Emergencia</title>
+  <meta name="description" content="Guía interactiva de reanimación cardiopulmonar (RCP con metrónomo sonoro a 110 bpm) y atragantamiento Heimlich. 100% privado en tu navegador.">
+  <style>
+    :root {
+      --bg: #0F172A;
+      --card-bg: #1E293B;
+      --primary: #EF4444;
+      --primary-hover: #DC2626;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --border: #334155;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.85rem;
+      background: rgba(239, 68, 68, 0.2);
+      color: #F87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-size: 2.1rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 0.35rem;
+      border-radius: 12px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 0.75rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: 9px;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Metrónomo RCP */
+    .cpr-stage {
+      background: #0F172A;
+      border-radius: 16px;
+      padding: 2.5rem 1rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      border: 3px solid var(--border);
+      transition: border-color 0.1s ease;
+    }
+    .cpr-stage.flash {
+      border-color: var(--primary);
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+    }
+    .cpr-number {
+      font-size: 5rem;
+      font-weight: 900;
+      line-height: 1;
+      color: white;
+    }
+    .cpr-instructions {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin-top: 0.75rem;
+      color: #F87171;
+    }
+
+    .btn-cpr {
+      width: 100%;
+      padding: 1.2rem;
+      background: var(--primary);
+      color: white;
+      font-size: 1.25rem;
+      font-weight: 900;
+      border-radius: 14px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    }
+
+    .guide-step {
+      background: #0F172A;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.85rem;
+      border-left: 4px solid var(--primary);
+    }
+    .guide-step-title { font-weight: 800; font-size: 1.05rem; margin-bottom: 0.25rem; }
+    .guide-step-desc { font-size: 0.95rem; color: #CBD5E1; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="badge">🫀 PROTOCOLO DE SOPORTE VITAL ERC</div>
+    <h1>Resq-Auxilios</h1>
+    <p class="subtitle">Metrónomo sonoro de RCP a 110 bpm y guía de atragantamiento Heimlich</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tabCpr" onclick="cambiarTab('cpr')">⚡ Metrónomo RCP (110 BPM)</button>
+    <button class="tab-btn" id="tabChoking" onclick="cambiarTab('choking')">🥖 Atragantamiento (Heimlich)</button>
+    <button class="tab-btn" id="tabBurns" onclick="cambiarTab('burns')">🔥 Quemaduras</button>
+  </div>
+
+  <div class="card" id="mainContent"></div>
+</div>
+
+<script src="resq.js"></script>
+<script>
+  'use strict';
+
+  var tabActual = 'cpr';
+
+  // Audio Context para Metrónomo
+  var audioCtx = null;
+  function beepRCP() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // La5 agudo y nítido
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.08);
+    } catch (e) {}
+  }
+
+  function cambiarTab(tab) {
+    pararMetronomo();
+    tabActual = tab;
+    document.getElementById('tabCpr').classList.toggle('active', tab === 'cpr');
+    document.getElementById('tabChoking').classList.toggle('active', tab === 'choking');
+    document.getElementById('tabBurns').classList.toggle('active', tab === 'burns');
+    if (tab === 'cpr') renderCPR();
+    else if (tab === 'choking') renderChoking();
+    else renderBurns();
+  }
+
+  // ------------------------------------------------------------------ Pestaña RCP
+  var cprActivo = false;
+  var cprCount = 0;
+  var cprIntervalId = null;
+
+  function renderCPR() {
+    var html = `
+      <div class="cpr-stage" id="cprStage">
+        <div class="cpr-number" id="cprDisplay">${cprCount}</div>
+        <div class="cpr-instructions" id="cprInstruction">
+          ${cprActivo ? '¡Comprime con fuerza al ritmo del bip!' : 'Pulsa el botón para iniciar el ritmo de 110 bpm'}
+        </div>
+      </div>
+
+      <button class="btn-cpr" onclick="toggleMetronomo()" id="btnCprAction">
+        ${cprActivo ? '⏹️ DETENER METRÓNOMO' : '▶️ INICIAR RITMO RCP (110 BPM)'}
+      </button>
+
+      <div style="background:#0F172A; border-radius:12px; padding:1.25rem; margin-top:1.5rem;">
+        <h4 style="color:#F87171; font-size:1.1rem; margin-bottom:0.5rem;">Puntos clave de RCP de alta calidad:</h4>
+        <ul style="margin-left:1.25rem; font-size:0.95rem; color:#CBD5E1; line-height:1.5;">
+          <li><strong>Centro del pecho:</strong> Talón de una mano con la otra entrelazada sobre la mitad inferior del esternón.</li>
+          <li><strong>Brazos rectos:</strong> Hombros justo encima de tus manos, aprovechando el peso del torso.</li>
+          <li><strong>Profundidad:</strong> Hunde 5 a 6 cm en adultos.</li>
+          <li><strong>Descompresión:</strong> Deja que el pecho suba del todo entre compresión y compresión (no te apoyes).</li>
+          <li><strong>Ciclos:</strong> Si estás entrenado, 30 compresiones + 2 insuflaciones. Si no, <u>compresiones continuas sin parar</u> hasta que llegue la ambulancia.</li>
+        </ul>
+      </div>
+    `;
+    document.getElementById('mainContent').innerHTML = html;
+  }
+
+  function toggleMetronomo() {
+    if (cprActivo) pararMetronomo();
+    else iniciarMetronomo();
+  }
+
+  function iniciarMetronomo() {
+    cprActivo = true;
+    cprCount = 0;
+    var info = ResqAuxilios.calcularIntervaloRCP(110);
+    renderCPR();
+
+    cprIntervalId = setInterval(function () {
+      cprCount++;
+      beepRCP();
+
+      var stage = document.getElementById('cprStage');
+      var disp = document.getElementById('cprDisplay');
+      var inst = document.getElementById('cprInstruction');
+
+      if (stage && disp && inst) {
+        disp.innerText = cprCount;
+        stage.classList.add('flash');
+        setTimeout(function () { stage.classList.remove('flash'); }, 120);
+
+        if (cprCount % 30 === 0) {
+          inst.innerText = '¡Ciclo de 30 completado! 2 ventilaciones o sigue comprimiendo.';
+        } else {
+          inst.innerText = '¡Comprime al ritmo (110 bpm)!';
+        }
+      }
+    }, info.intervaloMs);
+  }
+
+  function pararMetronomo() {
+    cprActivo = false;
+    clearInterval(cprIntervalId);
+    var btn = document.getElementById('btnCprAction');
+    if (btn) btn.innerText = '▶️ INICIAR RITMO RCP (110 BPM)';
+  }
+
+  // ------------------------------------------------------------------ Pestaña Atragantamiento
+  function renderChoking() {
+    var html = `
+      <h3 style="font-size:1.25rem; margin-bottom:1rem;">Protocolo ante atragantamiento / asfixia:</h3>
+
+      <div class="guide-step" style="border-left-color:#10B981;">
+        <div class="guide-step-title">1. ¿La persona tose con fuerza?</div>
+        <div class="guide-step-desc">
+          <strong>ANÍMALE A SEGUIR TOSIENDO.</strong> NUNCA des golpes en la espalda mientras tosa con fuerza, ya que podrías desplazar el objeto hacia vías más profundas.
+        </div>
+      </div>
+
+      <div class="guide-step" style="border-left-color:#EF4444;">
+        <div class="guide-step-title">2. Si no puede toser, ni hablar, ni respirar (Adulto):</div>
+        <div class="guide-step-desc">
+          <strong>5 Golpes en la espalda + 5 Compresiones de Heimlich:</strong>
+          <ol style="margin-left:1.25rem; margin-top:0.35rem;">
+            <li>Inclina a la víctima hacia adelante y da <strong>5 golpes secos</strong> con el talón de la mano entre los omóplatos.</li>
+            <li>Colócate detrás, rodea su cintura y coloca el puño entre el ombligo y el esternón.</li>
+            <li>Presiona con fuerza <strong>hacia adentro y hacia arriba 5 veces</strong> (Heimlich).</li>
+            <li>Alterna 5 golpes y 5 compresiones.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="guide-step" style="border-left-color:#F59E0B;">
+        <div class="guide-step-title">3. En bebés menores de 1 año (¡MUY IMPORTANTE!):</div>
+        <div class="guide-step-desc">
+          <strong>NUNCA hacer la maniobra de Heimlich en bebés</strong> (peligro de rotura hepática).<br>
+          Coloca al bebé boca abajo sobre tu antebrazo con la cabeza más baja que el cuerpo y aplica <strong>5 golpes interescapulares</strong>. Gíralo boca arriba y aplica <strong>5 compresiones torácicas con 2 dedos</strong>.
+        </div>
+      </div>
+
+      <div class="guide-step" style="border-left-color:#3B82F6;">
+        <div class="guide-step-title">4. Si pierde el conocimiento:</div>
+        <div class="guide-step-desc">
+          Llama al 112 de inmediato e <strong>inicia RCP (30 compresiones)</strong>. Cada vez que abras la vía aérea, mira dentro de la boca y retira el objeto SOLO si está suelto y a la vista (nunca barrido a ciegas).
+        </div>
+      </div>
+    `;
+    document.getElementById('mainContent').innerHTML = html;
+  }
+
+  // ------------------------------------------------------------------ Pestaña Quemaduras
+  function renderBurns() {
+    var pautas = ResqAuxilios.pautasQuemadura();
+    var html = `
+      <h3 style="font-size:1.25rem; margin-bottom:1rem;">Primeros Auxilios en Quemaduras:</h3>
+
+      <div style="background:rgba(20,184,166,0.15); border:1px solid #14B8A6; border-radius:12px; padding:1.25rem; margin-bottom:1.25rem;">
+        <div style="font-weight:900; font-size:1.15rem; color:#2DD4BF;">💧 REGLA DE ORO DE LOS 20 MINUTOS:</div>
+        <p style="margin-top:0.35rem; font-size:0.95rem; color:#CCFBF1;">
+          Enfría inmediatamente la quemadura bajo agua corriente templada o fresca (15-20ºC) durante <strong>20 minutos seguidos</strong>. Esto frena la propagación del calor a capas más profundas de la piel.
+        </p>
+      </div>
+
+      <div class="guide-step" style="border-left-color:#EF4444;">
+        <div class="guide-step-title">❌ Lo que NUNCA debes hacer:</div>
+        <ul style="margin-left:1.25rem; margin-top:0.35rem; font-size:0.95rem; line-height:1.4;">
+          ${pautas.prohibiciones.map(function(p){ return '<li>'+p+'</li>'; }).join('')}
+        </ul>
+      </div>
+
+      <div class="guide-step" style="border-left-color:#38BDF8;">
+        <div class="guide-step-title">🛡️ Protección posterior:</div>
+        <div class="guide-step-desc">${pautas.proteccion}</div>
+      </div>
+    `;
+    document.getElementById('mainContent').innerHTML = html;
+  }
+
+  renderCPR();
+</script>
+</body>
+</html>
